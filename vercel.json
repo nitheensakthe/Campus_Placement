@@ -23,12 +23,8 @@
       "dest": "backend/api/index.js"
     },
     {
-      "src": "/(.*\\.(js|css|ico|png|jpg|jpeg|svg|woff|woff2|ttf|eot))",
-      "dest": "/$1"
-    },
-    {
       "src": "/(.*)",
-      "dest": "/index.html"
+      "dest": "frontend/package.json"
     }
   ]
 }

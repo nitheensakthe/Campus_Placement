@@ -1,0 +1,72 @@
+version: '3.9'
+
+services:
+  # ─── MongoDB ────────────────────────────────────────────────────────
+  mongo:
+    image: mongo:7
+    container_name: campus_mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: campus_placement
+    networks:
+      - campus_net
+
+  # ─── Node.js / Express Backend API ──────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: campus_backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      PORT: 5000
+      MONGODB_URI: mongodb://mongo:27017/campus_placement
+      JWT_SECRET: ${JWT_SECRET:-super_secret_jwt_key_campus_placement_2026}
+      JWT_EXPIRES_IN: 7d
+      AI_SERVICE_URL: http://ai-service:8000
+      NODE_ENV: production
+    depends_on:
+      - mongo
+    volumes:
+      - ./backend/uploads:/app/uploads
+    networks:
+      - campus_net
+
+  # ─── Python FastAPI AI Microservice ─────────────────────────────────
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: campus_ai
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    networks:
+      - campus_net
+
+  # ─── Angular Frontend (served by nginx) ─────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: campus_frontend
+    restart: unless-stopped
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+    networks:
+      - campus_net
+
+volumes:
+  mongo_data:
+
+networks:
+  campus_net:
+    driver: bridge
